@@ -48,12 +48,19 @@ class AttendanceProvider extends ChangeNotifier {
             currentUser!.accid);
 
     // post Attendance
-    await postAttendance(currentUser!.accid, isTimeIn ? 'Time-in' : 'Time-out',
-        newAttendance.date, newAttendance.time);
-
-    resetUser();
-    notifyListeners();
-    showAttendanceSuccessfullyToast(isTimeIn);
+    try {
+      await postAttendance(
+          currentUser!.accid,
+          isTimeIn ? 'Time-in' : 'Time-out',
+          newAttendance.date,
+          newAttendance.time);
+    } catch (e) {
+      // handle if user doesn't have internet connection
+    } finally {
+      resetUser();
+      notifyListeners();
+      showAttendanceSuccessfullyToast(isTimeIn);
+    }
   }
 
   //send data to api

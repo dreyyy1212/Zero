@@ -16,8 +16,9 @@ import '../utils/common_utils.dart';
 class AttendanceProvider extends ChangeNotifier {
   Attendance? latestTodayAttendaceOfCurrentUser;
   List<Attendance> listAttendance = [];
-  bool isLoading = false;
   User? currentUser;
+  bool isLoading = false;
+  bool isLoadingSync = false;
 
   void newAttendace(bool isTimeIn) async {
     if (currentUser == null) return;
@@ -40,62 +41,26 @@ class AttendanceProvider extends ChangeNotifier {
       isSynced: false,
     );
     // post Attendance
+    isLoading = true;
+    notifyListeners();
     try {
-      final result = await AttendanceService.getPostAttendanceRequest(newAttendance);
+      final result = await AttendanceService.postAttendanceRequest(newAttendance);
       if (result.statusCode == 200 || result.statusCode == 201) {
         newAttendance.isSynced = true;
-        print("vietba success");
       }
     } catch (e) {
-      print("vietba error" + e.toString());
     } finally {
        // save attendance to db
       await AttendanceService.insertAttendance(newAttendance);
       latestTodayAttendaceOfCurrentUser =
           await AttendanceService.getLatestTodayAttendanceOfUser(
               currentUser!.accid);
+      isLoading = false;
       resetUser();
       notifyListeners();
-      showAttendanceSuccessfullyToast(isTimeIn);
+      CommonUtils.showToast("Perform ${isTimeIn ? "Time In" : "Time Out"} Successfully");
     }
   }
-
-  //send data to api
-  // Future<bool> postAttendance(
-  //     String accountId, String type, String date, String time) async {
-  //   var queryParameters = {
-  //     'deviceId': '1',
-  //     'deviceCode': 'afi_ast',
-  //     'token':
-  //         "\$2y\$10\$Gae33.BuN\/e1NLiYNw0.f.2g6Bi30Hkcas\/ra0n\/2gugauby6Pcd2",
-  //     'accountId': accountId,
-  //     'type': type,
-  //     'time': '$date $time',
-  //   };
-  //   try {
-  //     var uri = Uri.https(
-  //         'demo.ast.com.ph', '/api/devices/attendance/store', queryParameters);
-  //     final http.Response response =
-  //         await http.post(uri, headers: <String, String>{
-  //       'Content-Type': 'application/json; charset=UTF-8',
-  //     });
-  //     // Dispatch action depending upon
-  //     // the server response
-  //     if (response.statusCode == 200 || response.statusCode == 201) {
-  //       return true;
-  //     } else {
-  //       if (response.statusCode == 500) {
-  //         throw NetWorkException();
-  //       }
-  //       throw Exception('Response: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     if (e.runtimeType.toString() == '_ClientSocketException') {
-  //       throw NetWorkException();
-  //     }
-  //     throw Exception(e);
-  //   }
-  // }
 
   Future<String?> _getStartImageData() async {
     final XFile? image = await ImagePicker().pickImage(
@@ -129,7 +94,7 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getAllAttendance() async {
+  Future<void> getAllAttendance() async {
     listAttendance = await AttendanceService.getAllAttendance();
     listAttendance.sort((a1, a2) {
       final time1 = CommonUtils.convertDDMMYYtoDate(a1.date);
@@ -151,22 +116,13 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void showAttendanceSuccessfullyToast(bool isTimeIn) {
-    Fluttertoast.showToast(
-        msg: "Perform ${isTimeIn ? "Time In" : "Time Out"} Successfully",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0);
-  }
-
   void sync() async {
+    isLoadingSync = true;
+    notifyListeners();
     final listAttendanceNotSynced = await AttendanceService.getAllAttendanceIsNotSynced();
     final listPostApi = <Future>[];
     for (var attendance in listAttendanceNotSynced) {
-      listPostApi.add(AttendanceService.getPostAttendanceRequest(attendance));
+      listPostApi.add(AttendanceService.postAttendanceRequest(attendance));
     }
     try {
       await Future.wait(listPostApi);
@@ -174,9 +130,14 @@ class AttendanceProvider extends ChangeNotifier {
         attendance.isSynced = true;
         await AttendanceService.updateAttendance(attendance);
       }
-      getAllAttendance();
+      await getAllAttendance();
+      CommonUtils.showToast("Sync completed");
     } on Exception catch (e) {
+      CommonUtils.showToast("Sync failed");
       throw Exception(e.toString());
+    } finally {
+      isLoadingSync = false;
+      notifyListeners();
     }
   } 
 }

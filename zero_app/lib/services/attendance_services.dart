@@ -59,8 +59,7 @@ class AttendanceService {
     return res.map((e) => Attendance.fromJson(e)).toList();
   }
 
-  static Future<Response> getPostAttendanceRequest(Attendance attendance) {
-    print('vietba' + attendance.toString());
+  static Future<Response> postAttendanceRequest(Attendance attendance) {
     var queryParameters = {
       'deviceId': '1',
       'deviceCode': 'afi_ast',
@@ -70,7 +69,6 @@ class AttendanceService {
       'type': attendance.isTimeIn ? 'Time-in' : 'Time-out',
       'time': '${attendance.date} ${attendance.time}',
     };
-    print('vietba' + queryParameters.toString());
     return dio.post('/api/devices/attendance/store',
         queryParameters: queryParameters);
   }

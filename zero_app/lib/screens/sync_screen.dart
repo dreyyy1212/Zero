@@ -76,18 +76,33 @@ class _SyncPageState extends State<SyncPage> {
                 width: 20,
               ),
               //button to sync
-              ElevatedButton.icon(
-                onPressed: _onPressedSync,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 9, 50, 111),
-                ),
-                icon: Icon(Icons.sync), //icon data for elevated button
-                label: const Text(
-                  'Sync now',
-                  style: TextStyle(fontFamily: 'Poppins'),
-                ), //label text
+              SizedBox(
+                width: 140,
+                height: 45,
+                child: context.watch<AttendanceProvider>().isLoadingSync
+                    ? const Center(
+                      child: SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(
+                            color: Color.fromARGB(255, 9, 50, 111),
+                          ),
+                        ),
+                    )
+                    : ElevatedButton.icon(
+                        onPressed: _onPressedSync,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 9, 50, 111),
+                        ),
+                        icon: const Icon(
+                            Icons.sync), //icon data for elevated button
+                        label: const Text(
+                          'Sync now',
+                          style: TextStyle(fontFamily: 'Poppins'),
+                        ), //label text
+                      ),
               ),
-
               const SizedBox(
                 width: 15,
               ),

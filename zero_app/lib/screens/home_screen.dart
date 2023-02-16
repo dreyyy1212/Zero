@@ -179,8 +179,7 @@ class _HomePageState extends State<HomePage> {
     final data = await provider.scanQR();
     if (data == null) return;
     final userData = jsonDecode(data);
-    final user =
-        User(userData['accid'], userData['employeeCode'], userData['name']);
+    final user = User(userData['accid'], userData['employeeCode'], userData['name']);
     await provider.changeUser(user);
   }
 }

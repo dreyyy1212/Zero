@@ -77,10 +77,7 @@ class _SyncPageState extends State<SyncPage> {
               ),
               //button to sync
               ElevatedButton.icon(
-                onPressed: () {
-                  print("You pressed Icon Elevated Button");
-                  //Show Dialog
-                },
+                onPressed: _onPressedSync,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 9, 50, 111),
                 ),
@@ -134,7 +131,7 @@ class _SyncPageState extends State<SyncPage> {
     final listAttendance = context.watch<AttendanceProvider>().listAttendance;
     final data = listAttendance
         .map((a) => _Row(a.userId, a.userName, a.userCode, a.time,
-            a.isTimeIn ? 'Time In' : 'Time Out', a.date))
+            a.isTimeIn ? 'Time In' : 'Time Out', a.date, a.isSynced))
         .toList();
     return PaginatedDataTable(
       header: const Text(
@@ -172,6 +169,11 @@ class _SyncPageState extends State<SyncPage> {
         DataColumn(
             label: Text(
           'DATE',
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
+        )),
+        DataColumn(
+            label: Text(
+          'IS SYNCED',
           style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
         )),
       ],
@@ -284,6 +286,10 @@ class _SyncPageState extends State<SyncPage> {
       if (value == true) Navigator.of(context).pop();
     });
   }
+
+  void _onPressedSync() {
+    context.read<AttendanceProvider>().sync();
+  }
 }
 
 class _Row {
@@ -294,6 +300,7 @@ class _Row {
     this.time,
     this.isTimeIn,
     this.date,
+    this.isSynced,
   );
 
   final String userId;
@@ -302,6 +309,7 @@ class _Row {
   final String time;
   final String isTimeIn;
   final String date;
+  final bool isSynced;
 
   bool selected = false;
 }
@@ -339,6 +347,7 @@ class _DataSource extends DataTableSource {
         DataCell(Text(row.time)),
         DataCell(Text(row.isTimeIn)),
         DataCell(Text(row.date)),
+        DataCell(Text(row.isSynced ? 'true' : 'false')),
       ],
     );
   }

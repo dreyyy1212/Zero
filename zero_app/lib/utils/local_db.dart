@@ -33,6 +33,7 @@ class DBProvider {
   }
 
   void createTables(Database db) async {
+    // create table attendance
     await db.execute("CREATE TABLE $attendanceTableName ("
         "id TEXT PRIMARY KEY,"
         "userId TEXT,"
@@ -41,7 +42,8 @@ class DBProvider {
         "date TEXT,"
         "time TEXT,"
         "img TEXT,"
-        "isTimeIn INTEGER"
+        "isTimeIn INTEGER,"
+        "isSynced INTEGER"
         ")");
   }
 }

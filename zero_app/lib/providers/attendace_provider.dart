@@ -8,8 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-
 import '../modules/attendance.dart';
 import '../modules/user.dart';
 import '../services/attendance_services.dart';
@@ -39,24 +37,23 @@ class AttendanceProvider extends ChangeNotifier {
       userId: currentUser!.accid,
       userCode: currentUser!.employeeCode,
       userName: currentUser!.name,
+      isSynced: false,
     );
-
-    // save attendance to db
-    await AttendanceService.insertAttendance(newAttendance);
-    latestTodayAttendaceOfCurrentUser =
-        await AttendanceService.getLatestTodayAttendanceOfUser(
-            currentUser!.accid);
-
     // post Attendance
     try {
-      await postAttendance(
-          currentUser!.accid,
-          isTimeIn ? 'Time-in' : 'Time-out',
-          newAttendance.date,
-          newAttendance.time);
+      final result = await AttendanceService.getPostAttendanceRequest(newAttendance);
+      if (result.statusCode == 200 || result.statusCode == 201) {
+        newAttendance.isSynced = true;
+        print("vietba success");
+      }
     } catch (e) {
-      // handle if user doesn't have internet connection
+      print("vietba error" + e.toString());
     } finally {
+       // save attendance to db
+      await AttendanceService.insertAttendance(newAttendance);
+      latestTodayAttendaceOfCurrentUser =
+          await AttendanceService.getLatestTodayAttendanceOfUser(
+              currentUser!.accid);
       resetUser();
       notifyListeners();
       showAttendanceSuccessfullyToast(isTimeIn);
@@ -64,46 +61,41 @@ class AttendanceProvider extends ChangeNotifier {
   }
 
   //send data to api
-  Future<Attendance> postAttendance(
-      String accountId, String type, String date, String time) async {
-    var queryParameters = {
-      'deviceId': '1',
-      'deviceCode': 'afi_ast',
-      'token':
-          "\$2y\$10\$Gae33.BuN\/e1NLiYNw0.f.2g6Bi30Hkcas\/ra0n\/2gugauby6Pcd2",
-      'accountId': accountId,
-      'type': type,
-      'time': '$date $time',
-    };
-
-    var uri = Uri.https(
-        'demo.ast.com.ph', '/api/devices/attendance/store', queryParameters);
-
-    //checking
-    print('url: $uri');
-
-    final http.Response response =
-        await http.post(uri, headers: <String, String>{
-      'Content-Type': 'application/json; charset=UTF-8',
-    });
-
-    // Dispatch action depending upon
-    // the server response
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return Attendance(
-        userId: currentUser!.accid,
-        userCode: currentUser!.employeeCode,
-        userName: currentUser!.name,
-        id: 'test',
-        img: 'test',
-        time: 'test',
-        date: 'test',
-        isTimeIn: true,
-      );
-    } else {
-      throw Exception('Response: ${response.statusCode}');
-    }
-  }
+  // Future<bool> postAttendance(
+  //     String accountId, String type, String date, String time) async {
+  //   var queryParameters = {
+  //     'deviceId': '1',
+  //     'deviceCode': 'afi_ast',
+  //     'token':
+  //         "\$2y\$10\$Gae33.BuN\/e1NLiYNw0.f.2g6Bi30Hkcas\/ra0n\/2gugauby6Pcd2",
+  //     'accountId': accountId,
+  //     'type': type,
+  //     'time': '$date $time',
+  //   };
+  //   try {
+  //     var uri = Uri.https(
+  //         'demo.ast.com.ph', '/api/devices/attendance/store', queryParameters);
+  //     final http.Response response =
+  //         await http.post(uri, headers: <String, String>{
+  //       'Content-Type': 'application/json; charset=UTF-8',
+  //     });
+  //     // Dispatch action depending upon
+  //     // the server response
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       return true;
+  //     } else {
+  //       if (response.statusCode == 500) {
+  //         throw NetWorkException();
+  //       }
+  //       throw Exception('Response: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     if (e.runtimeType.toString() == '_ClientSocketException') {
+  //       throw NetWorkException();
+  //     }
+  //     throw Exception(e);
+  //   }
+  // }
 
   Future<String?> _getStartImageData() async {
     final XFile? image = await ImagePicker().pickImage(
@@ -169,4 +161,22 @@ class AttendanceProvider extends ChangeNotifier {
         textColor: Colors.white,
         fontSize: 16.0);
   }
+
+  void sync() async {
+    final listAttendanceNotSynced = await AttendanceService.getAllAttendanceIsNotSynced();
+    final listPostApi = <Future>[];
+    for (var attendance in listAttendanceNotSynced) {
+      listPostApi.add(AttendanceService.getPostAttendanceRequest(attendance));
+    }
+    try {
+      await Future.wait(listPostApi);
+      for (var attendance in listAttendanceNotSynced) {
+        attendance.isSynced = true;
+        await AttendanceService.updateAttendance(attendance);
+      }
+      getAllAttendance();
+    } on Exception catch (e) {
+      throw Exception(e.toString());
+    }
+  } 
 }

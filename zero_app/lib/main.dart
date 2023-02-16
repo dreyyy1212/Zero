@@ -7,9 +7,11 @@ import 'package:zero_app/screens/sync_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:zero_app/services/attendance_services.dart';
 
 
 void main() async {
+  AttendanceService.configDio();
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(
@@ -55,7 +57,7 @@ class MyApp extends StatelessWidget {
           color: Color.fromARGB(255, 9, 50, 111),
         ),
       ),
-      home: HomePage(),
+      home: const HomePage(),
     );
   }
 }

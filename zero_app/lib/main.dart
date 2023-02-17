@@ -8,9 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:zero_app/services/attendance_services.dart';
-
+import 'package:zero_app/utils/noti_handler.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotiHandler.requestPermission();
   AttendanceService.configDio();
   runApp(MultiProvider(
     providers: [
@@ -25,9 +27,20 @@ void main() async {
   ));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+
+  @override
+  void initState() {
+    NotiHandler.configNotificationSetting(context);
+    super.initState();
+  }
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {

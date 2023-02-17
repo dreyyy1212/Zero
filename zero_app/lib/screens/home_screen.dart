@@ -4,7 +4,6 @@ import 'package:zero_app/modules/user.dart';
 import 'package:zero_app/providers/attendace_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:zero_app/screens/scan_qr_sreen.dart';
 import '../main.dart';
 
 class HomePage extends StatefulWidget {

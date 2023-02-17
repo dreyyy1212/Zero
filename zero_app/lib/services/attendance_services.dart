@@ -7,6 +7,8 @@ import '../utils/local_db.dart';
 
 class AttendanceService {
 
+  AttendanceService._();
+
   static late final Dio dio;
   
   static void configDio() {

@@ -1,11 +1,30 @@
+import 'dart:async';
+
 import 'package:zero_app/providers/attendace_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zero_app/screens/qr_scanner_view.dart';
 import '../main.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final now = DateTime.now();
+      Timer(DateTime(now.year, now.month, now.day + 1, 0,0,0).difference(DateTime.now()), () {
+        context.read<AttendanceProvider>().getLastestTodayAttendanceOfUser();
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +57,6 @@ class HomePage extends StatelessWidget {
             body: HomeBody(),
           );
   }
-//user
 }
 
 class HomeBody extends StatefulWidget {

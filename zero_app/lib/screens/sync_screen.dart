@@ -338,7 +338,7 @@ class _SyncPageState extends State<SyncPage> {
       CommonUtils.showToast("You must select two dates");
       return;
     }
-    if (results[0] == null || results[1] == null) return;
+    if (results[0] == null || results[1] == null) return; 
     context
         .read<AttendanceProvider>()
         .deleteAttendance(results[0]!, results[1]!);

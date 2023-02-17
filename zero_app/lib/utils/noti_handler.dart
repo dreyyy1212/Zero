@@ -52,7 +52,7 @@ class NotiHandler {
         0,
         'Remember to sync',
         'Remember to sync if you did not sync this week',
-        _nextInstanceOfMondayTenAM(),
+        _nextInstanceOfMondayTenAM(), 
         const NotificationDetails(
           android: AndroidNotificationDetails('zero_app_weekly_notification_id',
               'zero_app_weekly_notification_name',

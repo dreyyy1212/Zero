@@ -4,9 +4,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import '../modules/attendance.dart';
 import '../modules/user.dart';
@@ -19,6 +16,18 @@ class AttendanceProvider extends ChangeNotifier {
   User? currentUser;
   bool isLoading = false;
   bool isLoadingSync = false;
+  bool displayQRView = false;
+
+
+  void showQRScreen() {
+    displayQRView = true;
+    notifyListeners();
+  }
+
+  void hideQRScreen() {
+    displayQRView = false;
+    notifyListeners();
+  }
 
   void newAttendace(bool isTimeIn) async {
     if (currentUser == null) return;
@@ -49,6 +58,7 @@ class AttendanceProvider extends ChangeNotifier {
         newAttendance.isSynced = true;
       }
     } catch (e) {
+      CommonUtils.showToast("Post attendance failed");
     } finally {
        // save attendance to db
       await AttendanceService.insertAttendance(newAttendance);
@@ -71,16 +81,6 @@ class AttendanceProvider extends ChangeNotifier {
     final imageBytes = File(image.path).readAsBytesSync();
     String img64 = base64Encode(imageBytes);
     return img64;
-  }
-
-  Future<String?> scanQR() async {
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      return await FlutterBarcodeScanner.scanBarcode(
-          '#ff6666', 'Cancel', true, ScanMode.QR);
-    } on PlatformException {
-      return null;
-    }
   }
 
   getLastestTodayAttendanceOfUser() async {

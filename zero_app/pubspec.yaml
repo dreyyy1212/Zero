@@ -40,7 +40,6 @@ dependencies:
   responsive_framework: ^0.2.0
   intl: ^0.18.0
   uuid: ^3.0.7
-  flutter_barcode_scanner: ^2.0.0
   image_picker: ^0.8.6
   responsive_table: ^0.2.0+2
   expandable_datatable: ^0.0.6
@@ -52,6 +51,7 @@ dependencies:
   flutter_local_notifications: ^13.0.0
   permission_handler: ^10.2.0
   flutter_native_timezone: ^2.0.0
+  mobile_scanner: ^3.0.0
 
 dev_dependencies:
   flutter_test:

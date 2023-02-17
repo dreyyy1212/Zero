@@ -11,6 +11,7 @@ class Attendance {
   String date;
   bool isTimeIn;
   bool isSynced;
+  int timestamp;  
 
   //getter
   Attendance({
@@ -23,6 +24,7 @@ class Attendance {
     required this.date,
     required this.isTimeIn,
     required this.isSynced,
+    required this.timestamp,
   });
 
   factory Attendance.fromJson(Map<String, dynamic> json) => Attendance(
@@ -35,6 +37,7 @@ class Attendance {
         img: json["img"],
         isTimeIn: json["isTimeIn"] == 0 ? false : true,
         isSynced: json["isSynced"] == 0 ? false : true,
+        timestamp: json["timestamp"],
       );
 
   // Convert an Attendance object to a JSON map.
@@ -49,5 +52,6 @@ class Attendance {
         "img": img,
         "isTimeIn": isTimeIn ? 1 : 0,
         "isSynced": isSynced ? 1 : 0,
+        "timestamp": timestamp,
       };
 }

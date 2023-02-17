@@ -99,7 +99,7 @@ class _HomeBodyState extends State<HomeBody> {
                       ? Colors.blue
                       : Colors.green,
                   child: InkWell(
-                    splashColor: Colors.white,
+                    splashColor: Colors.white,  
                     onTap: () {
                       var isPerformTimeIn =
                           !(latestTodayAttendaceOfCurrentUser?.isTimeIn ??

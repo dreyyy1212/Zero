@@ -6,15 +6,14 @@ import '../utils/common_utils.dart';
 import '../utils/local_db.dart';
 
 class AttendanceService {
-
   AttendanceService._();
 
   static late final Dio dio;
-  
+
   static void configDio() {
     dio = Dio()
-    ..options.baseUrl = 'https://demo.ast.com.ph'
-    ..options.headers = {'Content-Type': 'application/json; charset=UTF-8'};
+      ..options.baseUrl = 'https://demo.ast.com.ph'
+      ..options.headers = {'Content-Type': 'application/json; charset=UTF-8'};
   }
 
   static insertAttendance(Attendance attendance) async {
@@ -82,5 +81,17 @@ class AttendanceService {
         DBProvider.attendanceTableName, attendance.toJson(),
         where: "id = ?", whereArgs: [attendance.id]);
     return res;
+  }
+
+  static deleteAttendance(DateTime startDate, DateTime endDate) async {
+    final db = await DBProvider.db.database;
+    if (db == null) return null;
+    final startTimestamp = startDate.millisecondsSinceEpoch;
+    final endTimestamp = endDate.millisecondsSinceEpoch;
+    await db.delete(
+      DBProvider.attendanceTableName,
+      where: "timestamp >= ? AND timestamp <= ?",
+      whereArgs: [startTimestamp, endTimestamp],
+    );
   }
 }

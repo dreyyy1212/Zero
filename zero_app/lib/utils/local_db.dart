@@ -43,7 +43,8 @@ class DBProvider {
         "time TEXT,"
         "img TEXT,"
         "isTimeIn INTEGER,"
-        "isSynced INTEGER"
+        "isSynced INTEGER,"
+        "timestamp INTEGER"
         ")");
   }
 }

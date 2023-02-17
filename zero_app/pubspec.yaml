@@ -52,6 +52,7 @@ dependencies:
   permission_handler: ^10.2.0
   flutter_native_timezone: ^2.0.0
   mobile_scanner: ^3.0.0
+  calendar_date_picker2: ^0.3.9
 
 dev_dependencies:
   flutter_test:

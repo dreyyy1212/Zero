@@ -48,6 +48,7 @@ class AttendanceProvider extends ChangeNotifier {
       userCode: currentUser!.employeeCode,
       userName: currentUser!.name,
       isSynced: false,
+      timestamp: now.millisecondsSinceEpoch,
     );
     // post Attendance
     isLoading = true;
@@ -139,5 +140,15 @@ class AttendanceProvider extends ChangeNotifier {
       isLoadingSync = false;
       notifyListeners();
     }
-  } 
+  }
+
+  void deleteAttendance(DateTime startDate, DateTime endDate) async {
+    try {
+      await AttendanceService.deleteAttendance(startDate, endDate);
+      getAllAttendance();
+      CommonUtils.showToast("Attendance deleted");
+    } catch (e) {
+      CommonUtils.showToast("Delete attendance failed");
+    }
+  }
 }

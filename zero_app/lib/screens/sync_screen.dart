@@ -339,9 +339,10 @@ class _SyncPageState extends State<SyncPage> {
       return;
     }
     if (results[0] == null || results[1] == null) return; 
+    var endDate = results[1]!;
     context
         .read<AttendanceProvider>()
-        .deleteAttendance(results[0]!, results[1]!);
+        .deleteAttendance(results[0]!, DateTime(endDate.year, endDate.month, endDate.day + 1));
   }
 }
 

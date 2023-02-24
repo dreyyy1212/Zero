@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
@@ -7,15 +9,24 @@ import 'package:zero_app/providers/attendace_provider.dart';
 import '../modules/user.dart';
 
 class QRScannerView extends StatefulWidget {
-  const QRScannerView({super.key});
+  final StreamController streamController;
+  const QRScannerView(this.streamController, {super.key});
 
   @override
   State<QRScannerView> createState() => _QRScannerViewState();
 }
 
 class _QRScannerViewState extends State<QRScannerView> {
-  final controller = MobileScannerController(facing: CameraFacing.front);
+  final controller = MobileScannerController(facing: CameraFacing.back);
   final double width = 250;
+  final double height = 250;
+  final mybuttonkey = GlobalKey();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +45,13 @@ class _QRScannerViewState extends State<QRScannerView> {
           )
         ],
         leading: BackButton(
+          key: mybuttonkey,
           color: Colors.white,
-          onPressed: () => context.read<AttendanceProvider>().hideQRScreen(),
+          onPressed: () {
+            controller.dispose();
+            // context.read<AttendanceProvider>().hideQRScreen();
+            Navigator.of(context).pop();
+          },
         ),
       ),
       body: Stack(
@@ -51,8 +67,20 @@ class _QRScannerViewState extends State<QRScannerView> {
                   final userData = jsonDecode(barcode.rawValue!);
                   final user = User(userData['accid'], userData['employeeCode'],
                       userData['name']);
-                  provider.hideQRScreen();
-                  await provider.changeUser(user);
+                  // provider.hideQRScreen();
+                  provider.changeUser(user);
+                  RenderBox renderbox = mybuttonkey.currentContext!
+                      .findRenderObject() as RenderBox;
+                  Offset position = renderbox.localToGlobal(Offset.zero);
+                  double x = position.dx;
+                  double y = position.dy;
+                  GestureBinding.instance.handlePointerEvent(PointerDownEvent(
+                    position: Offset(x, y),
+                  ));
+                  await Future.delayed(const Duration(milliseconds: 50));
+                  GestureBinding.instance.handlePointerEvent(PointerUpEvent(
+                    position: Offset(x, y),
+                  ));
                 }
               },
             ),

@@ -14,13 +14,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    final now = DateTime.now();
-      Timer(DateTime(now.year, now.month, now.day + 1, 0,0,0).difference(DateTime.now()), () {
+      final now = DateTime.now();
+      Timer(
+          DateTime(now.year, now.month, now.day + 1, 0, 0, 0)
+              .difference(DateTime.now()), () {
         context.read<AttendanceProvider>().getLastestTodayAttendanceOfUser();
       });
     });
@@ -29,9 +30,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final displayQRView = context.watch<AttendanceProvider>().displayQRView;
-    return displayQRView
-        ? const QRScannerView()
-        : Scaffold(
+    return Scaffold(
             drawer: RealDrawer(),
             appBar: AppBar(
               toolbarHeight: 100.0,
@@ -67,6 +66,18 @@ class HomeBody extends StatefulWidget {
 }
 
 class _HomeBodyState extends State<HomeBody> {
+  final streamController = StreamController<int>();
+
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      streamController.stream.listen((event) {
+        Navigator.of(context).pop();
+      });
+    });
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = context.watch<AttendanceProvider>().currentUser;
@@ -117,7 +128,7 @@ class _HomeBodyState extends State<HomeBody> {
                       ? Colors.blue
                       : Colors.green,
                   child: InkWell(
-                    splashColor: Colors.white,  
+                    splashColor: Colors.white,
                     onTap: () {
                       var isPerformTimeIn =
                           !(latestTodayAttendaceOfCurrentUser?.isTimeIn ??
@@ -199,6 +210,9 @@ class _HomeBodyState extends State<HomeBody> {
   }
 
   changeCurrentUser() async {
-    context.read<AttendanceProvider>().showQRScreen();
+    // context.read<AttendanceProvider>().showQRScreen();
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => QRScannerView(this.streamController),
+    ));
   }
 }

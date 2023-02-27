@@ -324,10 +324,12 @@ class _SyncPageState extends State<SyncPage> {
   }
 
   void _onPressDelete() async {
+    var now = DateTime.now();
     var results = await showCalendarDatePicker2Dialog(
       context: context,
       config: CalendarDatePicker2WithActionButtonsConfig(
         calendarType: CalendarDatePicker2Type.range,
+        lastDate: DateTime(now.year, now.month, now.day - 1),
       ),
       dialogSize: const Size(325, 400),
       initialValue: [],

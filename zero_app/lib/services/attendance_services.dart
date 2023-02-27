@@ -90,8 +90,8 @@ class AttendanceService {
     final endTimestamp = endDate.millisecondsSinceEpoch;
     await db.delete(
       DBProvider.attendanceTableName,
-      where: "timestamp >= ? AND timestamp <= ?",
-      whereArgs: [startTimestamp, endTimestamp],
+      where: "timestamp >= ? AND timestamp <= ? AND isSynced = ?",
+      whereArgs: [startTimestamp, endTimestamp, 0],
     );
   }
 }

@@ -40,7 +40,6 @@ dependencies:
   responsive_framework: ^0.2.0
   intl: ^0.18.0
   uuid: ^3.0.7
-  flutter_barcode_scanner: ^2.0.0
   image_picker: ^0.8.6
   responsive_table: ^0.2.0+2
   expandable_datatable: ^0.0.6
@@ -48,6 +47,12 @@ dependencies:
   path_provider: ^2.0.11
   http: ^0.13.5
   fluttertoast: ^8.1.2
+  dio: ^5.0.0
+  flutter_local_notifications: ^13.0.0
+  permission_handler: ^10.2.0
+  flutter_native_timezone: ^2.0.0
+  mobile_scanner: ^3.0.0
+  calendar_date_picker2: ^0.3.9
 
 dev_dependencies:
   flutter_test:

@@ -4,12 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-
 import '../modules/attendance.dart';
 import '../modules/user.dart';
 import '../services/attendance_services.dart';
@@ -18,8 +13,21 @@ import '../utils/common_utils.dart';
 class AttendanceProvider extends ChangeNotifier {
   Attendance? latestTodayAttendaceOfCurrentUser;
   List<Attendance> listAttendance = [];
-  bool isLoading = false;
   User? currentUser;
+  bool isLoading = false;
+  bool isLoadingSync = false;
+  bool displayQRView = false;
+
+
+  void showQRScreen() {
+    displayQRView = true;
+    notifyListeners();
+  }
+
+  void hideQRScreen() {
+    displayQRView = false;
+    notifyListeners();
+  }
 
   void newAttendace(bool isTimeIn) async {
     if (currentUser == null) return;
@@ -39,69 +47,29 @@ class AttendanceProvider extends ChangeNotifier {
       userId: currentUser!.accid,
       userCode: currentUser!.employeeCode,
       userName: currentUser!.name,
+      isSynced: false,
+      timestamp: now.millisecondsSinceEpoch,
     );
-
-    // save attendance to db
-    await AttendanceService.insertAttendance(newAttendance);
-    latestTodayAttendaceOfCurrentUser =
-        await AttendanceService.getLatestTodayAttendanceOfUser(
-            currentUser!.accid);
-
     // post Attendance
+    isLoading = true;
+    notifyListeners();
     try {
-      await postAttendance(
-          currentUser!.accid,
-          isTimeIn ? 'Time-in' : 'Time-out',
-          newAttendance.date,
-          newAttendance.time);
+      final result = await AttendanceService.postAttendanceRequest(newAttendance);
+      if (result.statusCode == 200 || result.statusCode == 201) {
+        newAttendance.isSynced = true;
+      }
     } catch (e) {
-      // handle if user doesn't have internet connection
+      CommonUtils.showToast("Post attendance failed");
     } finally {
+       // save attendance to db
+      await AttendanceService.insertAttendance(newAttendance);
+      latestTodayAttendaceOfCurrentUser =
+          await AttendanceService.getLatestTodayAttendanceOfUser(
+              currentUser!.accid);
+      isLoading = false;
       resetUser();
       notifyListeners();
-      showAttendanceSuccessfullyToast(isTimeIn);
-    }
-  }
-
-  //send data to api
-  Future<Attendance> postAttendance(
-      String accountId, String type, String date, String time) async {
-    var queryParameters = {
-      'deviceId': '1',
-      'deviceCode': 'afi_ast',
-      'token':
-          "\$2y\$10\$Gae33.BuN\/e1NLiYNw0.f.2g6Bi30Hkcas\/ra0n\/2gugauby6Pcd2",
-      'accountId': accountId,
-      'type': type,
-      'time': '$date $time',
-    };
-
-    var uri = Uri.https(
-        'demo.ast.com.ph', '/api/devices/attendance/store', queryParameters);
-
-    //checking
-    print('url: $uri');
-
-    final http.Response response =
-        await http.post(uri, headers: <String, String>{
-      'Content-Type': 'application/json; charset=UTF-8',
-    });
-
-    // Dispatch action depending upon
-    // the server response
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return Attendance(
-        userId: currentUser!.accid,
-        userCode: currentUser!.employeeCode,
-        userName: currentUser!.name,
-        id: 'test',
-        img: 'test',
-        time: 'test',
-        date: 'test',
-        isTimeIn: true,
-      );
-    } else {
-      throw Exception('Response: ${response.statusCode}');
+      CommonUtils.showToast("Perform ${isTimeIn ? "Time In" : "Time Out"} Successfully");
     }
   }
 
@@ -116,16 +84,6 @@ class AttendanceProvider extends ChangeNotifier {
     return img64;
   }
 
-  Future<String?> scanQR() async {
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      return await FlutterBarcodeScanner.scanBarcode(
-          '#ff6666', 'Cancel', true, ScanMode.QR);
-    } on PlatformException {
-      return null;
-    }
-  }
-
   getLastestTodayAttendanceOfUser() async {
     if (currentUser == null) return;
     isLoading = true;
@@ -137,7 +95,7 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getAllAttendance() async {
+  Future<void> getAllAttendance() async {
     listAttendance = await AttendanceService.getAllAttendance();
     listAttendance.sort((a1, a2) {
       final time1 = CommonUtils.convertDDMMYYtoDate(a1.date);
@@ -159,14 +117,38 @@ class AttendanceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void showAttendanceSuccessfullyToast(bool isTimeIn) {
-    Fluttertoast.showToast(
-        msg: "Perform ${isTimeIn ? "Time In" : "Time Out"} Successfully",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0);
+  void sync() async {
+    isLoadingSync = true;
+    notifyListeners();
+    final listAttendanceNotSynced = await AttendanceService.getAllAttendanceIsNotSynced();
+    final listPostApi = <Future>[];
+    for (var attendance in listAttendanceNotSynced) {
+      listPostApi.add(AttendanceService.postAttendanceRequest(attendance));
+    }
+    try {
+      await Future.wait(listPostApi);
+      for (var attendance in listAttendanceNotSynced) {
+        attendance.isSynced = true;
+        await AttendanceService.updateAttendance(attendance);
+      }
+      await getAllAttendance();
+      CommonUtils.showToast("Sync completed");
+    } on Exception catch (e) {
+      CommonUtils.showToast("Sync failed");
+      throw Exception(e.toString());
+    } finally {
+      isLoadingSync = false;
+      notifyListeners();
+    }
+  }
+
+  void deleteAttendance(DateTime startDate, DateTime endDate) async {
+    try {
+      await AttendanceService.deleteAttendance(startDate, endDate);
+      getAllAttendance();
+      CommonUtils.showToast("Attendance deleted");
+    } catch (e) {
+      CommonUtils.showToast("Delete attendance failed");
+    }
   }
 }

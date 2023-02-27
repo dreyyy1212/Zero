@@ -1,8 +1,10 @@
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
 import 'package:zero_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:zero_app/providers/login_provider.dart';
+import 'package:zero_app/utils/common_utils.dart';
 
 import '../providers/attendace_provider.dart';
 
@@ -76,21 +78,33 @@ class _SyncPageState extends State<SyncPage> {
                 width: 20,
               ),
               //button to sync
-              ElevatedButton.icon(
-                onPressed: () {
-                  print("You pressed Icon Elevated Button");
-                  //Show Dialog
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 9, 50, 111),
-                ),
-                icon: Icon(Icons.sync), //icon data for elevated button
-                label: const Text(
-                  'Sync now',
-                  style: TextStyle(fontFamily: 'Poppins'),
-                ), //label text
+              SizedBox(
+                width: 140,
+                height: 45,
+                child: context.watch<AttendanceProvider>().isLoadingSync
+                    ? const Center(
+                        child: SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(
+                            color: Color.fromARGB(255, 9, 50, 111),
+                          ),
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: _onPressedSync,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 9, 50, 111),
+                        ),
+                        icon: const Icon(
+                            Icons.sync), //icon data for elevated button
+                        label: const Text(
+                          'Sync now',
+                          style: TextStyle(fontFamily: 'Poppins'),
+                        ), //label text
+                      ),
               ),
-
               const SizedBox(
                 width: 15,
               ),
@@ -109,7 +123,6 @@ class _SyncPageState extends State<SyncPage> {
                     fontSize: 20,
                     fontWeight: FontWeight.w700),
               ),
-
               //Table
             ],
           ),
@@ -123,6 +136,22 @@ class _SyncPageState extends State<SyncPage> {
                   _renderTabel(),
                 ],
               ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.centerRight,
+                child: ElevatedButton.icon(
+                  onPressed: _onPressDelete,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade800,
+                  ),
+                  icon:
+                      const Icon(Icons.delete), //icon data for elevated button
+                  label: const Text(
+                    'Delete',
+                    style: TextStyle(fontFamily: 'Poppins'),
+                  ), //label text
+                ),
+              ),
             ],
           )
         ],
@@ -134,7 +163,7 @@ class _SyncPageState extends State<SyncPage> {
     final listAttendance = context.watch<AttendanceProvider>().listAttendance;
     final data = listAttendance
         .map((a) => _Row(a.userId, a.userName, a.userCode, a.time,
-            a.isTimeIn ? 'Time In' : 'Time Out', a.date))
+            a.isTimeIn ? 'Time In' : 'Time Out', a.date, a.isSynced))
         .toList();
     return PaginatedDataTable(
       header: const Text(
@@ -172,6 +201,11 @@ class _SyncPageState extends State<SyncPage> {
         DataColumn(
             label: Text(
           'DATE',
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
+        )),
+        DataColumn(
+            label: Text(
+          'IS SYNCED',
           style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
         )),
       ],
@@ -284,6 +318,34 @@ class _SyncPageState extends State<SyncPage> {
       if (value == true) Navigator.of(context).pop();
     });
   }
+
+  void _onPressedSync() {
+    context.read<AttendanceProvider>().sync();
+  }
+
+  void _onPressDelete() async {
+    var now = DateTime.now();
+    var results = await showCalendarDatePicker2Dialog(
+      context: context,
+      config: CalendarDatePicker2WithActionButtonsConfig(
+        calendarType: CalendarDatePicker2Type.range,
+        lastDate: DateTime(now.year, now.month, now.day - 1),
+      ),
+      dialogSize: const Size(325, 400),
+      initialValue: [],
+      borderRadius: BorderRadius.circular(10),
+    );
+    if (results == null) return;
+    if (results.length != 2) {
+      CommonUtils.showToast("You must select two dates");
+      return;
+    }
+    if (results[0] == null || results[1] == null) return; 
+    var endDate = results[1]!;
+    context
+        .read<AttendanceProvider>()
+        .deleteAttendance(results[0]!, DateTime(endDate.year, endDate.month, endDate.day + 1));
+  }
 }
 
 class _Row {
@@ -294,6 +356,7 @@ class _Row {
     this.time,
     this.isTimeIn,
     this.date,
+    this.isSynced,
   );
 
   final String userId;
@@ -302,6 +365,7 @@ class _Row {
   final String time;
   final String isTimeIn;
   final String date;
+  final bool isSynced;
 
   bool selected = false;
 }
@@ -339,6 +403,7 @@ class _DataSource extends DataTableSource {
         DataCell(Text(row.time)),
         DataCell(Text(row.isTimeIn)),
         DataCell(Text(row.date)),
+        DataCell(Text(row.isSynced ? 'true' : 'false')),
       ],
     );
   }
